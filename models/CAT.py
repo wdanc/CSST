@@ -120,12 +120,10 @@ class TransformerLayer(nn.Module):
 
 
 class CosineCrossAttention(nn.Module):
-    def __init__(self, dim, proj_dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.):
+    def __init__(self, dim, proj_dim, num_heads=8, qkv_bias=False, attn_drop=0., proj_drop=0.):
         super().__init__()
         self.num_heads = num_heads
         self.dim = proj_dim
-        head_dim = proj_dim // num_heads
-        self.scale = qk_scale or head_dim ** -0.5
 
         self.to_q = nn.Linear(dim, proj_dim, bias=qkv_bias)
         self.to_k = nn.Linear(dim, proj_dim, bias=qkv_bias)
@@ -136,19 +134,19 @@ class CosineCrossAttention(nn.Module):
         self.proj_drop = nn.Dropout(proj_drop)
 
     def forward(self, query, kv):
-        B, T1, _, _ = query.shape
-        _, T2, N, _ = kv.shape
-        q = self.to_q(query).reshape(B, T1, -1, self.num_heads, self.dim // self.num_heads).permute(0, 3, 1, 2, 4)
-        k = self.to_k(kv).reshape(B, T2, N, self.num_heads, self.dim // self.num_heads).permute(0, 3, 1, 2, 4)
-        v = self.to_v(query).reshape(B, T1, -1, self.num_heads, self.dim // self.num_heads).permute(0, 3, 1, 2, 4)
+        B, T1, N, _ = query.shape
+        _, T2, _, _ = kv.shape
+        q = self.to_q(query).reshape(B, T1, N, self.num_heads, self.dim // self.num_heads).permute(0, 3, 1, 2, 4) # B H T N C'
+        k = self.to_k(kv).reshape(B, T2, 1, self.num_heads, self.dim // self.num_heads).permute(0, 3, 1, 2, 4) # B H 1 1 C'
+        v = self.to_v(kv).reshape(B, T2, 1, self.num_heads, self.dim // self.num_heads).permute(0, 3, 1, 2, 4) # B H 1 1 C'
 
-        norm_q = LA.norm(q, dim=-1, keepdim=True)
-        norm_k = LA.norm(k, dim=-1, keepdim=True)
-        norm_qk = norm_k @ norm_q  # B H T N 1
-        attn = (q @ k.transpose(-2, -1)).squeeze(-2) / norm_qk.squeeze(-1) # B H T N
+        norm_q = LA.norm(q, dim=-1, keepdim=True)  # B H T N 1
+        norm_k = LA.norm(k, dim=-1, keepdim=True)  # B H 1 1 1
+        norm_qk = norm_q @ norm_k  # B H T N 1
+        attn = (q @ k.transpose(-2, -1)) / norm_qk # B H T N 1
         attn = self.attn_drop(attn)
         # B H T N C' -> B T N C' H -> B T N C
-        x = (attn.unsqueeze(-1) @ v).permute(0, 2, 3, 4, 1).reshape(B, T2, N, self.dim)
+        x = (attn @ v).permute(0, 2, 3, 4, 1).reshape(B, T1, N, self.dim)
         x = self.proj(x)
         x = self.proj_drop(x)
         return x
@@ -170,7 +168,7 @@ class CATransformerBlock(nn.Module):
         self.mlp = Mlp(in_features=proj_dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
 
     def forward(self, q, kv):
-        out = self.norm1(kv + self.drop_path(self.cross_attn(q, kv)))
+        out = self.norm1(q + self.drop_path(self.cross_attn(q, kv)))
         out = self.norm2(out + self.drop_path(self.attn(out)))
         out = self.norm3(out + self.drop_path(self.mlp(out)))
         return out
@@ -261,14 +259,14 @@ class CATransformerLevel(nn.Module):
             d_transformer = getattr(self, 'd_transformer_'+str(i))
             d = d_extract(x)
             p.append(d)
-            q = x * d[:, 1:]
-            q = self.global_pool(q)
-            q = q.permute(0, 2, 3, 1)  # B 1 1 C
+            kv = x * d[:, 1:]
+            kv = self.global_pool(kv)
+            kv = kv.permute(0, 2, 3, 1)  # B 1 1 C
 
             x = x.permute(0, 2, 3, 1)  # (B, H', W', C), switch to channels last for transformer
             x = blockify(x, self.block_size)  # (B, T, N, C')
 
-            x = d_transformer(q, x)
+            x = d_transformer(x, kv)
             x = deblockify(x, self.block_size)
             x = x.permute(0, 3, 1, 2)
 
