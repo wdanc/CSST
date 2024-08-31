@@ -152,7 +152,7 @@ class CosineCrossAttention(nn.Module):
         return x
 
 
-class CATransformerBlock(nn.Module):
+class CSSTransformerBlock(nn.Module):
     def __init__(self, dim, proj_dim, num_heads, mlp_ratio=4., qkv_bias=False,
                  drop=0., attn_drop=0., drop_path=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm):
         super().__init__()
@@ -234,7 +234,7 @@ class LocalNestLevel(nn.Module):
         return x.permute(0, 3, 1, 2)
 
 
-class CATransformerLevel(nn.Module):
+class CSSTransformerLevel(nn.Module):
     def __init__(
             self, block_size, num_heads, depth, embed_dim,
             mlp_ratio=4., qkv_bias=True, drop_rate=0., attn_drop_rate=0.,
@@ -246,7 +246,7 @@ class CATransformerLevel(nn.Module):
 
         for i in range(depth):
             self.add_module('d_extract_'+str(i), nn.Conv2d(embed_dim, 2, kernel_size=3, padding=1))
-            self.add_module('d_transformer_'+str(i), CATransformerBlock(
+            self.add_module('d_transformer_'+str(i), CSSTransformerBlock(
                 dim=embed_dim, proj_dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias,
                 drop=drop_rate, attn_drop=attn_drop_rate,
                 norm_layer=norm_layer, act_layer=act_layer))
@@ -321,12 +321,12 @@ class Upsample(nn.Module):
         return x
 
 
-class CAT(nn.Module):
+class CSST(nn.Module):
     def __init__(self, img_size=256, in_chans=3, patch_size=4, num_levels=3, block_size=8, embed_dims=(96, 192, 384),
                  num_heads=(3, 6, 12), depths=(4, 4, 6), dt_depth=(2,2,2), num_classes=2, mlp_ratio=4, qkv_bias=True,
                  drop_rate=0., attn_drop_rate=0., drop_path_rate=0.0, norm_layer=None, act_layer=None,
                  pad_type='', weight_init=''):
-        super(CAT, self).__init__()
+        super(CSST, self).__init__()
 
         self.num_levels = num_levels
         for param_name in ['embed_dims', 'num_heads', 'depths']:
@@ -367,7 +367,7 @@ class CAT(nn.Module):
         diff_levels = []
         for i in range(self.num_levels):
             dim = embed_dims[i]
-            diff_levels.append(CATransformerLevel(
+            diff_levels.append(CSSTransformerLevel(
                 self.block_size, num_heads[i], dt_depth[i], dim,
                 mlp_ratio, qkv_bias, drop_rate, attn_drop_rate, norm_layer, act_layer))
         self.diff_levels = nn.Sequential(*diff_levels)
