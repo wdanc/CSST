@@ -3,8 +3,8 @@ from torch.nn import init
 from torch.optim import lr_scheduler
 
 import models
-from models.CAT import CAT
-from models.resnet import CAT_ResNet18
+from models.CSST import CSST
+from models.resnet import CSST_ResNet18
 
 ###############################################################################
 # Helper Functions
@@ -90,11 +90,11 @@ def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[]):
 
 
 def define_G(args, init_type='normal', init_gain=0.02, gpu_ids=[]):
-    if args.net_G == 'CAT_Siam_T':
-        net = CAT(img_size=256, in_chans=3, patch_size=4, num_levels=3, block_size=8, embed_dims=(96, 192, 384),
+    if args.net_G == 'CSST_Siam_T':
+        net = CSST(img_size=256, in_chans=3, patch_size=4, num_levels=3, block_size=8, embed_dims=(96, 192, 384),
                   num_heads=(3, 6, 12), depths=(4, 4, 6), dt_depth=(2,2,2))
-    elif args.net_G == 'CAT_Siam_R':
-        net = CAT_ResNet18()
+    elif args.net_G == 'CSST_Siam_R':
+        net = CSST_ResNet18()
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % args.net_G)
     return init_net(net, init_type, init_gain, gpu_ids)
