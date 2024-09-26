@@ -138,6 +138,39 @@ class CDTrainer():
         else:
             print('training from scratch...')
 
+    def _load_pretarined_checkpoint(self, ckpt_file=None):  # /data/wdan/ImageNetWeights/resnet18-5c106cde.pth
+        if ckpt_file:
+            self.logger.write('loading pretrained checkpoint...\n')
+                checkpoint = torch.load(ckpt_file,
+                                        map_location=self.device)
+                state_dict_key = 'state_dict'
+                if isinstance(checkpoint, dict):
+                    if 'state_dict_ema' in checkpoint:
+                        state_dict_key = 'state_dict_ema'
+                if state_dict_key and state_dict_key in checkpoint:
+                    new_state_dict = OrderedDict()
+                    for k, v in checkpoint[state_dict_key].items():
+                        # strip `module.` prefix
+                        name = k[7:] if k.startswith('module') else k
+                        new_state_dict[name] = v
+                    state_dict = new_state_dict
+                else:
+                    state_dict = checkpoint
+
+                for name in list(state_dict.keys()):
+                    if name not in list(self.net_G.state_dict()):
+                        del state_dict[name]
+                        print('delete pretrained weight:', name)
+                # update net_G states
+                self.net_G.load_state_dict(state_dict, strict=False)
+                print('\n ---start load pretrained model--- \n')
+
+            self.net_G.to(self.device)
+            self.logger.write('\n')
+
+        else:
+            print('training from scratch...')
+
     def _timer_update(self):
         self.global_step = (self.epoch_id-self.epoch_to_start) * self.steps_per_epoch + self.batch_id
 
@@ -280,7 +313,9 @@ class CDTrainer():
         self.G_loss += temp_loss
         self.G_loss.backward()
 
-    def train_models(self):
+    def train_models(self, pretrain=None):
+        if pretrain:
+            self._load_pretarined_checkpoint(pretrain)
         self._load_checkpoint()
 
         # loop over the dataset multiple times
@@ -326,7 +361,9 @@ class CDTrainer():
             self._update_val_acc_curve()
             self._update_checkpoints()
 
-    def train_models_dp(self):
+    def train_models_dp(self, pretrain=None):
+        if pretrain:
+            self._load_pretarined_checkpoint(pretrain)
         self._load_checkpoint()
 
         # loop over the dataset multiple times
