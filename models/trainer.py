@@ -1,6 +1,8 @@
 import numpy as np
+import random
 import matplotlib.pyplot as plt
 import os
+import copy
 
 import utils
 from models.networks import *
@@ -47,7 +49,7 @@ class CDTrainer():
                                      weight_decay=5e-4)
         elif args.optimizer == "adam":
             self.optimizer_G = optim.Adam(self.net_G.parameters(), lr=self.lr,
-                                     weight_decay=0)
+                                     weight_decay=1e-4)
         elif args.optimizer == "adamw":
             self.optimizer_G = optim.AdamW(self.net_G.parameters(), lr=self.lr,
                                     betas=(0.9, 0.999), weight_decay=0.01)
@@ -64,6 +66,18 @@ class CDTrainer():
         # define timer
         self.timer = Timer()
         self.batch_size = args.batch_size
+
+        if args.seed is None:
+            seed = random.randint(1, 10000)
+        else:
+            seed = args.manual_seed
+        self.logger.write('Random seed: {} '.format(seed))
+
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        np.random.seed(seed)
+        random.seed(seed)
 
         #  training log
         self.epoch_acc = 0
@@ -136,34 +150,34 @@ class CDTrainer():
             self.logger.write('\n')
 
         else:
-            print('training from scratch...')
+            print('training from epoch 0...')
 
-    def _load_pretarined_checkpoint(self, ckpt_file=None):  # /data/wdan/ImageNetWeights/resnet18-5c106cde.pth
+    def _load_pretarined_checkpoint(self, ckpt_file=None):  # ImageNetWeights/resnet18-5c106cde.pth
         if ckpt_file:
             self.logger.write('loading pretrained checkpoint...\n')
-                checkpoint = torch.load(ckpt_file,
-                                        map_location=self.device)
-                state_dict_key = 'state_dict'
-                if isinstance(checkpoint, dict):
-                    if 'state_dict_ema' in checkpoint:
-                        state_dict_key = 'state_dict_ema'
-                if state_dict_key and state_dict_key in checkpoint:
-                    new_state_dict = OrderedDict()
-                    for k, v in checkpoint[state_dict_key].items():
-                        # strip `module.` prefix
-                        name = k[7:] if k.startswith('module') else k
-                        new_state_dict[name] = v
-                    state_dict = new_state_dict
-                else:
-                    state_dict = checkpoint
+            checkpoint = torch.load(ckpt_file,
+                                    map_location=self.device)
+            state_dict_key = 'state_dict'
+            if isinstance(checkpoint, dict):
+                if 'state_dict_ema' in checkpoint:
+                    state_dict_key = 'state_dict_ema'
+            if state_dict_key and state_dict_key in checkpoint:
+                new_state_dict = OrderedDict()
+                for k, v in checkpoint[state_dict_key].items():
+                    # strip `module.` prefix
+                    name = k[7:] if k.startswith('module') else k
+                    new_state_dict[name] = v
+                state_dict = new_state_dict
+            else:
+                state_dict = checkpoint
 
-                for name in list(state_dict.keys()):
-                    if name not in list(self.net_G.state_dict()):
-                        del state_dict[name]
-                        print('delete pretrained weight:', name)
-                # update net_G states
-                self.net_G.load_state_dict(state_dict, strict=False)
-                print('\n ---start load pretrained model--- \n')
+            for name in list(state_dict.keys()):
+                if name not in list(self.net_G.state_dict()):
+                    del state_dict[name]
+                    print('delete pretrained weight:', name)
+            # update net_G states
+            print('\n ---start load pretrained model--- \n')
+            self.net_G.load_state_dict(state_dict, strict=False)
 
             self.net_G.to(self.device)
             self.logger.write('\n')
@@ -286,6 +300,7 @@ class CDTrainer():
         img_in1 = batch['A'].to(self.device)
         img_in2 = batch['B'].to(self.device)
         self.G_pred = self.net_G(img_in1, img_in2)
+        # self.G_pred = self.net_G(torch.cat([img_in1, img_in2], dim=1))['out']  # TODO
 
     def _forward_pass_dp(self, batch):
         self.batch = batch
@@ -312,6 +327,7 @@ class CDTrainer():
                 temp_loss = temp_loss + self._pxl_loss(pred, gt)
         self.G_loss += temp_loss
         self.G_loss.backward()
+
 
     def train_models(self, pretrain=None):
         if pretrain:
@@ -364,6 +380,7 @@ class CDTrainer():
     def train_models_dp(self, pretrain=None):
         if pretrain:
             self._load_pretarined_checkpoint(pretrain)
+            print('load pretrained weights: ', pretrain)
         self._load_checkpoint()
 
         # loop over the dataset multiple times
