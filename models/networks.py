@@ -4,7 +4,7 @@ from torch.optim import lr_scheduler
 
 import models
 from models.CSST import CSST
-from models.resnet import CSST_ResNet18
+from models.resnet import CSST_ResNet18, CSST_ResNet18PT
 
 ###############################################################################
 # Helper Functions
@@ -95,6 +95,8 @@ def define_G(args, init_type='normal', init_gain=0.02, gpu_ids=[]):
                   num_heads=(3, 6, 12), depths=(4, 4, 6), dt_depth=(2,2,2))
     elif args.net_G == 'CSST_Siam_R':
         net = CSST_ResNet18()
+    elif args.net_G == 'CSST_Siam_PR':
+        net = CSST_ResNet18PT()
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % args.net_G)
     return init_net(net, init_type, init_gain, gpu_ids)
