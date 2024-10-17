@@ -38,14 +38,6 @@ bash run_cd.sh
 ```
 
 
- - Training CSST_ChangeFormer
-
-We used [ChangeFormer's project] (https://github.com/wgcban/ChangeFormer) to train CSST_ChangeFormer. 
-
-Put the file 'csstchangeformer.py' into the subfolder 'models' of the project of ChangeFormer. Set corresponding configs in run_cd.sh, training epochs=200. optimizer=adamw, weight decay=0.01, lr=2e−4, batchsize=16, splitval=val.
-
-Run the script in the terminal.
-
 - Testing
   
 Set the necessary configs, such as --project_name，--net_G，--data_name, and etc, in file 'eval_cd.py'. Then, run it in the terminal.
@@ -54,11 +46,19 @@ Set the necessary configs, such as --project_name，--net_G，--data_name, and e
 python eval_cd.py
 ```
 
+ - Train CSST_ChangeFormer
+
+We used [ChangeFormer's project](https://github.com/wgcban/ChangeFormer) to train CSST_ChangeFormer. 
+
+Put the file 'csstchangeformer.py' into the subfolder 'models' of the project of ChangeFormer. Set corresponding configs in run_cd.sh, training epochs=200. optimizer=adamw, weight decay=0.01, lr=2e−4, batchsize=16, splitval=val.
+
+Run the script in the terminal.
+
 ## Acknowledgment
 
 Appreciate for the two code works:
 
-(https://github.com/justchenhao/BIT_CD)
+https://github.com/justchenhao/BIT_CD
 
-(https://github.com/wgcban/ChangeFormer)
+https://github.com/wgcban/ChangeFormer
 
