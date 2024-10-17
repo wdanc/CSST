@@ -31,11 +31,12 @@ CSST-based Models：
 
 - Training
 
-	- Set the necessary configures in file 'run_cd.sh', then run it in the terminal.
+Set the necessary configures in file 'run_cd.sh', then run it in the terminal.
 
 ```sh
 bash run_cd.sh
 ```
+
 
 	- Training CSST_ChangeFormer
 
@@ -53,7 +54,7 @@ Set the necessary configs, such as --project_name，--net_G，--data_name, and e
 python eval_cd.py
 ```
 
-##Acknowledgment
+## Acknowledgment
 
 Appreciate for the two code works:
 
