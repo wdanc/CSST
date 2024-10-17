@@ -1,6 +1,6 @@
 Code for "One Token for Detecting Various Changes" (Under Review) is being updated.
 
-## 环境
+## Requirement
 Ubuntu 20.04
 
 python==3.7
@@ -10,12 +10,12 @@ pytorch==1.9.0
 timm==0.4.5
 
 
-## 数据集和模型
-处理后的VL-CMU-CD二分类变化检测数据集：[CMUBi](https://pan.baidu.com/s/1UI34-Wide_pVFBCX9eaQpQ?pwd=8sgw)
+## Dataset and Weights
+The VL-CMU-CD (binary classification) data set：[CMUBi](https://pan.baidu.com/s/1UI34-Wide_pVFBCX9eaQpQ?pwd=8sgw)
 
-模型权重：
+CSST-based Models：
 
-| 模型     | F1     |
+| Model Weights     | F1     |
 | ---------- | ---------- |
 | [CSST_Siam_T_DSIFN](https://pan.baidu.com/s/1_CdnHdOUYCENeHf2MIdbEg?pwd=4ba7) | 94.81 |
 | [CSST_Siam_T_CDD](https://pan.baidu.com/s/1Coj_MwMmT8HZljtwGikB5g?pwd=7r3n) | 97.49 |
@@ -27,20 +27,37 @@ timm==0.4.5
 | [CSST_Siam_RPT_CMUBi](https://pan.baidu.com/s/1tgrl3ixt5e-qCPOX-Tkhrg?pwd=cmrx) | 77.77 |
 
 
-## 运行
+## Usage
 
-- 训练模型
+- Training
 
-对 run_cd.sh文件中各项参数进行相应更改后在终端运行
+	- Set the necessary configures in file 'run_cd.sh', then run it in the terminal.
 
 ```sh
 bash run_cd.sh
 ```
 
-- 测试
+	- Training CSST_ChangeFormer
+
+We used [ChangeFormer's project] (https://github.com/wgcban/ChangeFormer) to train CSST_ChangeFormer. 
+
+Put the file 'csstchangeformer.py' into the subfolder 'models' of the project of ChangeFormer. Set corresponding configs in run_cd.sh, training epochs=200. optimizer=adamw, weight decay=0.01, lr=2e−4, batchsize=16, splitval=val.
+
+Run the script in the terminal.
+
+- Testing
   
-对 eval_cd.py文件中的--project_name，--net_G，--data_name等参数进行相应更改后在终端运行
+Set the necessary configs, such as --project_name，--net_G，--data_name, and etc, in file 'eval_cd.py'. Then, run it in the terminal.
 
 ```sh
 python eval_cd.py
 ```
+
+##Acknowledgment
+
+Appreciate for the two code works:
+
+(https://github.com/justchenhao/BIT_CD)
+
+(https://github.com/wgcban/ChangeFormer)
+
