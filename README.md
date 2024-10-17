@@ -2,8 +2,11 @@ Code for "One Token for Detecting Various Changes" (Under Review) is being updat
 
 ## 环境
 Ubuntu 20.04
+
 python==3.7
+
 pytorch==1.9.0
+
 timm==0.4.5
 
 
@@ -26,14 +29,18 @@ timm==0.4.5
 
 ## 运行
 
--训练模型
+- 训练模型
+
 对 run_cd.sh文件中各项参数进行相应更改后在终端运行
+
 ```sh
 bash run_cd.sh
 ```
 
--测试
+- 测试
+  
 对 eval_cd.py文件中的--project_name，--net_G，--data_name等参数进行相应更改后在终端运行
+
 ```sh
 python eval_cd.py
 ```
