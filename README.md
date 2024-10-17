@@ -38,7 +38,7 @@ bash run_cd.sh
 ```
 
 
-	- Training CSST_ChangeFormer
+ - Training CSST_ChangeFormer
 
 We used [ChangeFormer's project] (https://github.com/wgcban/ChangeFormer) to train CSST_ChangeFormer. 
 
